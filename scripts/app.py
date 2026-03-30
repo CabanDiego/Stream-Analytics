@@ -5,7 +5,7 @@ import plotly.express as px
 
 SUMMARY_PATH = ''
 
-st.set_page_config(page_title="Transactions Information",layour="wide")
+st.set_page_config(page_title="Transactions Information",layout="wide")
 st.title("Ream TIme Transacion Analytics")
 
 @st.cache_data(ttl=60)

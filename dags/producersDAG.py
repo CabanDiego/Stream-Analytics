@@ -1,9 +1,11 @@
+'''DAG for producing data with Faker'''
+
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 from datetime import datetime
 
 with DAG(
-    dag_id='datastream_pipeline',
+    dag_id='data_producers',
     start_date=(2026,3,30),
     schedule_interval=None,
     catchup=False
@@ -19,10 +21,5 @@ with DAG(
         task_id='generate_user_events_data',
         bash_command='python /opt/airflow/scripts/producers/user_events_producer.py --bootstrap-servers localhost:9094 --topic user_events --interval 1.0'
     )
-    #Task 3: Ingest from producers to landing zone
-    task3 = BashOperator(
-        task_id='read_events_from_topics',
-        bash_command='python /opt/airflow/jobs/ingest_kafka_to_landing.py'
-    )
 
-task1 >> task2 >> task3
+task1 >> task2 
