@@ -1,0 +1,7 @@
+apache-airflow==2.10.2
+kafka-python==2.3.0
+Faker==40.11.1
+pandas==2.3.3
+plotly==6.6.0
+streamlit==1.55.0
+pyspark==4.1.1
