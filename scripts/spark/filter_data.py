@@ -1,7 +1,13 @@
+'''
+
+Spark Module to filter ingested JSON data from Kafka
+
+'''
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
 from pathlib import Path
 
+#Generating path to the raw data file
 BASEPATH = Path(__file__).parent.parent.parent
 RAWDATA = BASEPATH / "data" / "raw_data.json"
 
@@ -17,6 +23,6 @@ transactions_df = df.filter(col("Topic") == "transaction_events")
 
 user_events_df = df.filter(col("Topic") == "user_events")
 
-print(user_events_df.count())
+
 
 spark.stop()
