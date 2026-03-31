@@ -30,8 +30,9 @@ def consume_batch(topic: str, batch_duration_sec: int, output_path: str) -> int:
 
     consumer = KafkaConsumer(
         bootstrap_servers='localhost:9094',
-        group_id='my_consumer_group',
-        auto_offset_reset='earliest',
+        group_id='real_time_consumer_group',
+        auto_offset_reset='latest',
+        enable_auto_commit=True,
         value_deserializer=lambda m: json.loads(m.decode('utf-8'))
     )
 
@@ -51,8 +52,8 @@ def consume_batch(topic: str, batch_duration_sec: int, output_path: str) -> int:
     os.makedirs(output_path, exist_ok=True)
     file_path = os.path.join(output_path, "raw_data.json")
 
-    with open(file_path, "w")as f:
-        json.dump(messages,f, indent=4)
+    with open(file_path, "a")as f:
+        json.dump(messages, f)
     
     consumer.close()
 
@@ -69,4 +70,4 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     count = consume_batch(args.topics, args.duration, args.output)
-    pass
+    print(f"{count} messages were recieved")
