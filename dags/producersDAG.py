@@ -4,9 +4,11 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from datetime import datetime
 
+start_date = datetime.today()
+
 with DAG(
     dag_id='data_producers',
-    start_date=(2026,3,30),
+    start_date=(start_date),
     schedule_interval=None,
     catchup=False
 ) as dag:
@@ -22,4 +24,4 @@ with DAG(
         bash_command='python /opt/airflow/scripts/producers/user_events_producer.py --bootstrap-servers localhost:9094 --topic user_events --interval 1.0'
     )
 
-task1 >> task2 
+[task1, task2]

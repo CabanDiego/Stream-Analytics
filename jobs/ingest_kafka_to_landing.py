@@ -26,8 +26,10 @@ def consume_batch(topic: str, batch_duration_sec: int, output_path: str) -> int:
     """
     # TODO: Implement
 
+    #Seperating passed string to obtain every topic
     topic_list = [t.strip() for t in topic.split(",")]
 
+    #Consumer object
     consumer = KafkaConsumer(
         bootstrap_servers='localhost:9094',
         group_id='real_time_consumer_group',
@@ -36,8 +38,9 @@ def consume_batch(topic: str, batch_duration_sec: int, output_path: str) -> int:
         value_deserializer=lambda m: json.loads(m.decode('utf-8'))
     )
 
+    #Subscribing to every topic listed
     consumer.subscribe(topic_list)
-
+    #Starting time and looping through messages in topics and saving them to a list
     start_time = time.time()
     messages = []
     while time.time() - start_time < batch_duration_sec:
@@ -49,10 +52,11 @@ def consume_batch(topic: str, batch_duration_sec: int, output_path: str) -> int:
             if time.time() - start_time >= batch_duration_sec:
                 break
 
+    #Creating/overwriting the landing zone file
     os.makedirs(output_path, exist_ok=True)
     file_path = os.path.join(output_path, "raw_data.json")
 
-    with open(file_path, "a")as f:
+    with open(file_path, "w")as f:
         json.dump(messages, f)
     
     consumer.close()

@@ -4,10 +4,12 @@ from airflow import DAG
 from airflow.operators.bash import BashOperator
 from datetime import datetime
 
+start_date = datetime.today()
+
 with DAG(
     dag_id="kafka_landing_ingest",
-    start_date=datetime(2026,3,30),
-    schedule_interval='*/1 * * * *',  
+    start_date=datetime(start_date),
+    schedule_interval='*/3 * * * *',  
     catchup=False
 )as dag:
     
