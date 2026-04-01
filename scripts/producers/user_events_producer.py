@@ -66,7 +66,7 @@ def generate_user_event():
         event["element_id"] = f"btn_{fake.word()}_{random.randint(1, 100)}"
     elif event_type in ["add_to_cart", "remove_from_cart"]:
         event["product_id"] = random.choice(PRODUCT_POOL)  # Select from shared pool for joinability
-        event["quantity"] = random.randint(1, 5)
+        event["quantity"] = str(random.randint(1, 5))
     
     return event
 

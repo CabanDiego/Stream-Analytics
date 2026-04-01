@@ -10,6 +10,7 @@ import json
 import time
 import os
 import argparse
+from datetime import datetime, timezone
 
 
 def consume_batch(topic: str, batch_duration_sec: int, output_path: str) -> int:
@@ -44,20 +45,23 @@ def consume_batch(topic: str, batch_duration_sec: int, output_path: str) -> int:
     start_time = time.time()
     messages = []
     while time.time() - start_time < batch_duration_sec:
-        for msg in consumer:
-            messages.append({
-                "Topic"  : msg.topic,
-                "Data" : msg.value
-            })
-            if time.time() - start_time >= batch_duration_sec:
-                break
+        #Using poll to get all new messages that arrived in the last second
+        poll_msg = consumer.poll(timeout_ms=1000)
+        #Looping through each message and appending to the list
+        for msg in poll_msg.values():
+            for m in msg:
+                messages.append({
+                    "Topic": m.topic,
+                    "Data": m.value
+                })
 
-    #Creating/overwriting the landing zone file
+    #Creating new landing zone file based on the current time
     os.makedirs(output_path, exist_ok=True)
-    file_path = os.path.join(output_path, f"{time.time()}.json")
+    timestamp_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    file_path = os.path.join(output_path, f"{timestamp_str}.json")
 
     with open(file_path, "w")as f:
-        json.dump(messages, f,)
+        json.dump(messages, f, indent=2)
     
     consumer.close()
 
@@ -67,9 +71,9 @@ def consume_batch(topic: str, batch_duration_sec: int, output_path: str) -> int:
 if __name__ == "__main__":
     # TODO: Parse args and call consume_batch
     parser = argparse.ArgumentParser(description="Kafka batch consumer")
-    parser.add_argument("--topics", type=str, required=True, help="Comma-separated Kafka topics")
+    parser.add_argument("--topics", type=str, required=True, help="Comma separated Kafka topics")
     parser.add_argument("--duration", type=int, default=40, help="Batch duration in seconds")
-    parser.add_argument("--output", type=str, default="./data/landing", help="Output directory for JSON files")
+    parser.add_argument("--output", type=str, default="/opt/spark-data/landing", help="Output directory for JSON files")
     
     args = parser.parse_args()
     
