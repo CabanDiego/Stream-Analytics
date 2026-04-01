@@ -8,7 +8,7 @@ start_date = datetime.today()
 
 with DAG(
     dag_id="kafka_landing_ingest",
-    start_date=datetime(start_date),
+    start_date=(start_date),
     schedule_interval='*/3 * * * *',  
     catchup=False
 )as dag:
@@ -20,4 +20,5 @@ with DAG(
          '--topics transaction_events,user_events --duration 40 '
           '--output ./data/landing')
     )
-ingest_task
+
+ingest_task 

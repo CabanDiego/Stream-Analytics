@@ -54,10 +54,10 @@ def consume_batch(topic: str, batch_duration_sec: int, output_path: str) -> int:
 
     #Creating/overwriting the landing zone file
     os.makedirs(output_path, exist_ok=True)
-    file_path = os.path.join(output_path, "raw_data.json")
+    file_path = os.path.join(output_path, f"{time.time()}.json")
 
     with open(file_path, "w")as f:
-        json.dump(messages, f)
+        json.dump(messages, f,)
     
     consumer.close()
 
