@@ -14,17 +14,12 @@ with DAG(
 ) as dag:
     #Task 1: Create  transaction events using Faker
     task1 = BashOperator(
-        task_id='generate_transaction_events_data',
-        bash_command='nohup python /opt/airflow/scripts/producers/transaction_events_producer.py --bootstrap-servers kafka:9092 --topic transaction_events --interval 2.0'
-    )
-
+    task_id='generate_transaction_events_data',
+    bash_command='python /opt/airflow/scripts/producers/transaction_events_producer.py --bootstrap-servers kafka:9092 --topic transaction_events --interval 2.0 --count 10'
+)
     #Task 2: Create user events using Faker
     task2 = BashOperator(
-        task_id='generate_user_events_data',
-        bash_command='nohup python /opt/airflow/scripts/producers/user_events_producer.py --bootstrap-servers kafka:9092 --topic user_events --interval 1.0'
-    )
+    task_id='generate_user_events_data',
+    bash_command='python /opt/airflow/scripts/producers/user_events_producer.py --bootstrap-servers kafka:9092 --topic user_events --interval 1.0 --count 10'
+)
 
-#Tasks run infinetly 
-#Kill Commands
-#pkill -f transaction_events_producer.py
-#pkill -f user_events_producer.py
