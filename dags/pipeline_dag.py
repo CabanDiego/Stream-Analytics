@@ -24,12 +24,9 @@ with DAG(
     #Task to run spark script
     transform_data_task = BashOperator(
         task_id='transform_ingested_data',
-        bash_command=('python /opt/airflow/scripts/spark/transforming_data.py')
-    )
-    #Task for streamlit to stream the data
-    streamlit_task = BashOperator(
-        task_id="streaming_streamlit",
-        bash_command=('touch opt/airflow/scripts/app.py')
+        bash_command=(
+            'spark-submit --master local[*] /opt/airflow/scripts/transforming_data.py')
     )
 
-ingest_task >> transform_data_task >> streamlit_task
+
+ingest_task >> transform_data_task 
