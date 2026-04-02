@@ -4,18 +4,14 @@ Spark Module to filter ingested JSON data from Kafka
 
 '''
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, when
+from pyspark.sql.functions import col
 from pathlib import Path
-import time
 import os
 
 
-#Generating path to the raw data file
+#Generating path to the raw data file and output path of gold layer
 landing_path = Path("/opt/spark-data/landing") 
 output_path = Path("/opt/spark-data/gold")
-
-# landing_path = Path("./data/landing") 
-# output_path = Path("./data/gold")
 
 os.makedirs(output_path, exist_ok=True)
 
