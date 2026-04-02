@@ -16,7 +16,7 @@ with DAG(
     #Task to run ingest consumer
     ingest_task = BashOperator(
         task_id='ingest_kafka_to_landing',
-        bash_command=('python /opt/airflow/jobs/ingest_kafka_to_landing.py '
+        bash_command=('python /opt/spark-jobs/ingest_kafka_to_landing.py '
          '--topics transaction_events,user_events --duration 40 '
           '--output /opt/spark-data/landing')
     )

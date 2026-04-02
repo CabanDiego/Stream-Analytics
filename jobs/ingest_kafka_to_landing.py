@@ -32,7 +32,7 @@ def consume_batch(topic: str, batch_duration_sec: int, output_path: str) -> int:
 
     #Consumer object
     consumer = KafkaConsumer(
-        bootstrap_servers='localhost:9094',
+        bootstrap_servers='kafka:9092',
         group_id='real_time_consumer_group',
         auto_offset_reset='latest',
         enable_auto_commit=True,
