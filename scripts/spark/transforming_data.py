@@ -78,11 +78,8 @@ cleaned_uevents_df = struct_user_events_df.dropna(how='any')
 #Saving each df to a seperate file inside a folder named after batch name
 file_name = os.path.basename(latest_file).split(".")[0]
 
-cleaned_transactions_df.write.csv(
-    f"{output_path}/batch_{file_name}.csv",
-    header=True,
-    mode="overwrite"
-)
+cleaned_transactions_df.write.parquet(
+    f"{output_path}/batch_{file_name}/transactions.parquet")
 
 cleaned_uevents_df.write.parquet(
     f"{output_path}/batch_{file_name}/user_events.parquet")
