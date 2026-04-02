@@ -58,7 +58,7 @@ def consume_batch(topic: str, batch_duration_sec: int, output_path: str) -> int:
     #Creating new landing zone file based on the current time
     os.makedirs(output_path, exist_ok=True)
     timestamp_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    file_path = os.path.join(output_path, f"{timestamp_str}.json")
+    file_path = os.path.join(output_path, f"{timestamp_str}_batch.json")
 
     with open(file_path, "w")as f:
         json.dump(messages, f, indent=2)
@@ -70,7 +70,7 @@ def consume_batch(topic: str, batch_duration_sec: int, output_path: str) -> int:
 
 if __name__ == "__main__":
     # TODO: Parse args and call consume_batch
-    parser = argparse.ArgumentParser(description="Kafka batch consumer")
+    parser = argparse.ArgumentParser(description="Kafka consumer")
     parser.add_argument("--topics", type=str, required=True, help="Comma separated Kafka topics")
     parser.add_argument("--duration", type=int, default=40, help="Batch duration in seconds")
     parser.add_argument("--output", type=str, default="/opt/spark-data/landing", help="Output directory for JSON files")

@@ -11,14 +11,20 @@ import os
 
 
 #Generating path to the raw data file
-landing_path = Path("./data/landing") 
-output_path = Path("./data/transformed_data")
+landing_path = Path("/opt/spark-data/landing") 
+output_path = Path("/opt/spark-data/gold")
+
+# landing_path = Path("./data/landing") 
+# output_path = Path("./data/gold")
+
 os.makedirs(output_path, exist_ok=True)
 
+#Extracting the lastest json file to transform latest batch
 json_files = sorted(landing_path.glob("*.json"))
 if not json_files:
-    print(f"No batch files found in {landing_path}. Exiting.")
+    print(f"No files found in {landing_path}.")
     exit(0)
+    
 latest_file = json_files[-1]
 
 spark = SparkSession.builder\
@@ -35,17 +41,20 @@ transactions_df = df.filter(col("Topic") == "transaction_events")
 
 #Flattening and filtering wanted Transaction data for analyzing
 struct_transactions_df = transactions_df.select(
+    col("Data.transaction_id").alias("transaction_id"),
+    col("Data.user_id").alias("user_id"),
+    col("Data.transaction_type").alias("transaction_type"),
     col("Data.products.product_name").cast("string").alias("product_name"),
     col("Data.billing_address.country").alias("country"),
+    col("Data.payment_method").alias("payment_method"),
+    col("Data.currency").alias("currency"),
     col("Data.total").alias("total"),
-    col("Data.user_id").alias("user_id"),
     col("Data.timestamp").alias("timestamp")
+    
 )
 
-#Adding new column for event (purchase if total > 0, otherwise return)
-final_transactions_df = struct_transactions_df\
-    .withColumn("event", when(struct_transactions_df.total > 0, "purchase")\
-                .otherwise("return"))
+#Dropping any rows with any null/nan values
+cleaned_transactions_df = struct_transactions_df.dropna(how='any')
 
 
 # ========== User Events ========
@@ -53,37 +62,34 @@ final_transactions_df = struct_transactions_df\
 #Separating user events from ingested data
 user_events_df = df.filter(col("Topic") == "user_events")
 
-user_events_df.printSchema()
-
 #Flattening and filtering wanted user event data for analyzing
-final_user_events_df = user_events_df.select(
+struct_user_events_df = user_events_df.select(
     col("Data.user_id").alias("user_id"),
+    col("Data.event_type").alias("event_type"),
     col("Data.browser").alias("browser"),
     col("Data.device").alias("device"),
     col("Data.session_id").alias("session_id")
 )
 
-# final_user_events_df.createOrReplaceTempView("u_events")
 
-# sql_results = spark.sql("""
-#     SELECT * FROM u_events
-#                         LIMIT 20
-# """).show(20)
+#Dropping any rows with any null/nan values
+cleaned_uevents_df = struct_user_events_df.dropna(how='any')
 
 
-# ========== Joins ========
+# ========== Saving Data ========
 
-left_join_df = final_transactions_df.join(final_user_events_df,
-                                     "user_id", "left")
 
-#final_df = ""
+#Saving each df to a seperate file inside a folder named after batch name
+file_name = os.path.basename(latest_file).split(".")[0]
 
-timestamp_str = time.strftime("%Y%m%d_%H%M%S")
-left_join_df.write.csv(
-    f"{output_path}/user_events_{timestamp_str}.csv",
+cleaned_transactions_df.write.csv(
+    f"{output_path}/batch_{file_name}.csv",
     header=True,
     mode="overwrite"
 )
-print("Saved transformed data")
+
+cleaned_uevents_df.write.parquet(
+    f"{output_path}/batch_{file_name}/user_events.parquet")
+print(f"Saved transformed data for batch {file_name}")
 
 spark.stop()

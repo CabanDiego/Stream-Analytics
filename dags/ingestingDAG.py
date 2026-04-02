@@ -7,7 +7,7 @@ from datetime import datetime
 start_date = datetime.today()
 
 with DAG(
-    dag_id="kafka_landing_ingest",
+    dag_id="kafka_landing_ingest_transform",
     start_date=(start_date),
     schedule_interval='*/3 * * * *',  
     catchup=False
@@ -20,3 +20,11 @@ with DAG(
          '--topics transaction_events,user_events --duration 40 '
           '--output /opt/spark-data/landing')
     )
+
+    #Task to run spark script
+    transform_data_task = BashOperator(
+        task_id='transform_ingested_data',
+        bash_command=('python /opt/airflow/scripts/spark/transforming_data.py')
+    )
+
+ingest_task >> transform_data_task
