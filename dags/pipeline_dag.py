@@ -7,7 +7,7 @@ from datetime import datetime
 start_date = datetime.today()
 
 with DAG(
-    dag_id="kafka_landing_ingest_transform",
+    dag_id="ingest_transform_stream_pipeline",
     start_date=(start_date),
     schedule_interval='*/3 * * * *',  
     catchup=False
@@ -26,5 +26,10 @@ with DAG(
         task_id='transform_ingested_data',
         bash_command=('python /opt/airflow/scripts/spark/transforming_data.py')
     )
+    #Task for streamlit to stream the data
+    streamlit_task = BashOperator(
+        task_id="streaming_streamlit",
+        bash_command=('touch opt/airflow/scripts/app.py')
+    )
 
-ingest_task >> transform_data_task
+ingest_task >> transform_data_task >> streamlit_task
