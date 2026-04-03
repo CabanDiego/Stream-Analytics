@@ -28,5 +28,11 @@ with DAG(
             'spark-submit --master local[*] /opt/airflow/scripts/transforming_data.py')
     )
 
+    #Task to refresh/get data using streamlit from the gold layer
+    streamlit_task = BashOperator(
+        task_id='streamlit_data_refresh',
+        bash_command='touch /opt/airflow/scripts/app.py'
+    )
 
-ingest_task >> transform_data_task 
+
+ingest_task >> transform_data_task >> streamlit_task
