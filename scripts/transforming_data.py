@@ -19,13 +19,14 @@ spark = SparkSession.builder\
     .getOrCreate()
 
 #Verifying to see if there are any json files in landing area
-if not any(landing_path.glob("*.json")):
-    print(f"No JSON files found in {landing_path}")
+json_files = list(landing_path.glob("*.json"))
+if not json_files:
+    print(f"No JSON files found in {landing_path}, exiting...")
     spark.stop()
     exit(0)
     
 #Reading found files and making sure they arent empty
-df = spark.read.option("multiLine", True).json(f"{landing_path}/*.json")
+df = spark.read.option("multiLine", True).json([str(f) for f in json_files])
 
 if df.rdd.isEmpty():
     print("No data found")

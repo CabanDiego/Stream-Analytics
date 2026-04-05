@@ -1,36 +1,125 @@
-'''
-
-Take gold layer data, analyze it, and display it using streamlit
-
-'''
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 from pathlib import Path
-import glob
+
+st.set_page_config(page_title="Transaction Analytics", layout="wide")
+st.title("Real-Time Transaction Analytics")
+
+# Paths to gold layer parquet data
+GOLD_TRANSACTIONS_PATH = Path("data/gold/fact_transactions")
+GOLD_USER_EVENTS_PATH = Path("data/gold/fact_user_events")
+
+#Load transactions data
+@st.cache_data(ttl=10)
+def load_transactions():
+    #Verifying to see if path exists
+    if not GOLD_TRANSACTIONS_PATH.exists():
+        return pd.DataFrame()
+
+    #Retrieving list of parquet files inside the path, if none exist return empty
+    parquet_files = list(GOLD_TRANSACTIONS_PATH.rglob("*.parquet"))
+    if not parquet_files:
+        return pd.DataFrame()
+
+    #Storing each dataframe from each file and using concat to unify them
+    frames = []
+    for file in parquet_files:
+        df = pd.read_parquet(file)
+        #Splitting the file name into parts to see if 
+        #ingestion_time is in the name to see if it is the correct file to use
+        for part in file.parts:
+            if "ingestion_time=" in part:
+                df["ingestion_time"] = part.split("=")[1]
+        frames.append(df)
+
+    return pd.concat(frames, ignore_index=True)
 
 
-st.set_page_config(page_title="Transactions Analysis",layout="wide")
-st.title("Transacion Analytics")
 
-tevents_PATH = Path("/opt/spark-data/gold")
-#Extracting the lastest gold payer parquet file for analysis
+#Load user events data
+@st.cache_data(ttl=10)
+def load_user_events():
+    #Verifying to see if path exists
+    if not GOLD_USER_EVENTS_PATH.exists():
+        return pd.DataFrame()
 
-gold_files = sorted(glob.glob(str(tevents_PATH)))
-if not gold_files:
-    print(f"No files found in {tevents_PATH}.")
-    exit(0)
-    
-latest_file = gold_files[-1]
+    #Retrieving list of parquet files inside the path, if none exist return empty
+    parquet_files = list(GOLD_USER_EVENTS_PATH.rglob("*.parquet"))
+    if not parquet_files:
+        return pd.DataFrame()
 
-#Load data and refresh cache 60 seconds
-@st.cache_data(ttl=60)
-def load_data():
-    print(str(latest_file))
-    return pd.read_parquet(str(latest_file))
+    #Storing each dataframe from each file and using concat to unify them
+    frames = []
+    for file in parquet_files:
+        df = pd.read_parquet(file)
+        #Splitting the file name into parts to see if 
+        #ingestion_time is in the name to see if it is the correct file to use
+        for part in file.parts:
+            if "ingestion_time=" in part:
+                df["ingestion_time"] = part.split("=")[1]
+        frames.append(df)
+
+    return pd.concat(frames, ignore_index=True)
+
 
 try:
-    df = load_data()
-except Exception as e:
-    st.warning("Waiting for Data")
+    #Load both datasets
+    transactions_df = load_transactions()
+    user_events_df = load_user_events()
 
+    #Holder in case there is no data
+    if transactions_df.empty and user_events_df.empty:
+        st.warning("Waiting for Airflow to generate the first gold data...")
+        st.stop()
+
+    #Transaction Events
+    if not transactions_df.empty:
+        st.subheader("Transaction Events Analysis")
+        col1, col2, col3 = st.columns(3)
+
+        total_sales = transactions_df["total"].sum()
+        top_user = transactions_df.groupby("user_id")["total"].sum().sort_values(ascending=False).reset_index()
+        top_product = transactions_df["product_name"].value_counts().reset_index()
+        top_product.columns = ["product_name", "count"]
+
+        col1.metric("Total Sales", f"${total_sales:,.2f}")
+        col2.metric("Top Spender", top_user.iloc[0]["user_id"], f"${top_user.iloc[0]['total']:.2f}")
+        col3.metric("Top Product", top_product.iloc[0]["product_name"], f"{top_product.iloc[0]['count']} purchases")
+
+        product_sales = transactions_df.groupby("product_name")["total"].sum().sort_values(ascending=False).reset_index()
+        fig = px.bar(
+            product_sales.head(10),
+            x="product_name",
+            y="total",
+            title="Top 10 Products by Revenue",
+            color="total"
+        )
+        st.plotly_chart(fig, use_container_width=True)
+
+    #User Events
+    if not user_events_df.empty:
+        st.subheader("User Events Analysis")
+        col1, col2, col3 = st.columns(3)
+
+        most_used_browser = user_events_df.groupby("browser").size().sort_values(ascending=False).reset_index()
+        top_event_user = user_events_df.groupby("user_id").size().sort_values(ascending=False).reset_index()
+        top_event_type = user_events_df["event_type"].value_counts().reset_index()
+        top_event_type.columns = ["event_type", "count"]
+
+        col1.metric("Most Used Browser", most_used_browser.iloc[0]["browser"], f"{most_used_browser.iloc[0][0]} uses")
+        col2.metric("Top Active User", top_event_user.iloc[0]["user_id"], f"{top_event_user.iloc[0][0]} events")
+        col3.metric("Top Event Type", top_event_type.iloc[0]["event_type"], f"{top_event_type.iloc[0]['count']} occurrences")
+
+        #Plot top event types
+        fig_events = px.bar(
+            top_event_type.head(10),
+            x="event_type",
+            y="count",
+            title="Top 10 Event Types",
+            color="count"
+        )
+        st.plotly_chart(fig_events, use_container_width=True)
+
+except Exception as e:
+    st.warning("Waiting for Airflow to generate the first gold data...")
