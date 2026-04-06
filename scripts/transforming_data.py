@@ -24,7 +24,8 @@ if not json_files:
     print(f"No JSON files found in {landing_path}, exiting...")
     spark.stop()
     exit(0)
-    
+
+#Find the last modified file and get its name
 latest_file = max(landing_path.glob("*.json"), key=lambda f: f.stat().st_mtime)
 landing_name = latest_file.stem
     
