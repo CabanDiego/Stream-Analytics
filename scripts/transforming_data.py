@@ -25,21 +25,22 @@ if not json_files:
     spark.stop()
     exit(0)
     
+latest_file = max(landing_path.glob("*.json"), key=lambda f: f.stat().st_mtime)
+landing_name = latest_file.stem
+    
+    
 #Reading found files and making sure they arent empty
-df = spark.read.option("multiLine", True).json([str(f) for f in json_files])
+df = spark.read.option("multiLine", True)\
+    .option("mode", "DROPMALFORMED")\
+    .json(str(latest_file))
+    
+df.cache()
 
 if df.rdd.isEmpty():
     print("No data found")
     spark.stop()
     exit(0)
     
-#Adding columns to help naming partitions
-df = df.withColumn("file_name", input_file_name())
-
-df = df.withColumn(
-    "ingestion_time", 
-    regexp_extract(col("file_name"), r"(\d{8}_\d{6})", 1)
-)
 
 # ========== Transaction Events ========
 
@@ -56,8 +57,7 @@ struct_transactions_df = transactions_df.select(
     col("Data.payment_method").alias("payment_method"),
     col("Data.currency").alias("currency"),
     col("Data.total").alias("total"),
-    col("Data.timestamp").alias("timestamp"),
-    col("ingestion_time")
+    col("Data.timestamp").alias("timestamp")
 )
 
 #Dropping any rows with any null/nan values
@@ -74,8 +74,7 @@ struct_user_events_df = user_events_df.select(
     col("Data.event_type").alias("event_type"),
     col("Data.browser").alias("browser"),
     col("Data.device").alias("device"),
-    col("Data.session_id").alias("session_id"),
-    col("ingestion_time")
+    col("Data.session_id").alias("session_id")
 )
 
 #Dropping any rows with any null/nan values
@@ -96,8 +95,7 @@ fact_transactions = cleaned_transactions_df.select(
     "country",
     "total",
     "transaction_type",
-    "timestamp",
-    "ingestion_time"
+    "timestamp"
 )
 
 fact_user_events = cleaned_uevents_df.select(
@@ -105,25 +103,22 @@ fact_user_events = cleaned_uevents_df.select(
     "event_type",
     "browser",
     "device",
-    "session_id",
-    "ingestion_time"
+    "session_id"
 )
 
 # ========== Saving Gold Layer ========
 fact_transactions.write \
     .mode("append") \
-    .partitionBy("ingestion_time") \
-    .parquet(f"{output_path}/fact_transactions")
+    .parquet(f"{output_path}/fact_transactions/{landing_name}_transformed")
 
 fact_user_events.write \
     .mode("append") \
-    .partitionBy("ingestion_time") \
-    .parquet(f"{output_path}/fact_user_events")
+    .parquet(f"{output_path}/fact_user_events/{landing_name}_transformed")
 
 
-dim_users.write.mode("append").parquet(f"{output_path}/dim_users")
-dim_products.write.mode("append").parquet(f"{output_path}/dim_products")
-dim_country.write.mode("append").parquet(f"{output_path}/dim_country")
+dim_users.write.mode("append").parquet(f"{output_path}/dim_users/{landing_name}_transformed")
+dim_products.write.mode("append").parquet(f"{output_path}/dim_products/{landing_name}_transformed")
+dim_country.write.mode("append").parquet(f"{output_path}/dim_country/{landing_name}_transformed")
 
 print("Saved Gold Layer data")
 

@@ -26,11 +26,6 @@ def load_transactions():
     frames = []
     for file in parquet_files:
         df = pd.read_parquet(file)
-        #Splitting the file name into parts to see if 
-        #ingestion_time is in the name to see if it is the correct file to use
-        for part in file.parts:
-            if "ingestion_time=" in part:
-                df["ingestion_time"] = part.split("=")[1]
         frames.append(df)
 
     return pd.concat(frames, ignore_index=True)
@@ -53,11 +48,6 @@ def load_user_events():
     frames = []
     for file in parquet_files:
         df = pd.read_parquet(file)
-        #Splitting the file name into parts to see if 
-        #ingestion_time is in the name to see if it is the correct file to use
-        for part in file.parts:
-            if "ingestion_time=" in part:
-                df["ingestion_time"] = part.split("=")[1]
         frames.append(df)
 
     return pd.concat(frames, ignore_index=True)
@@ -84,7 +74,7 @@ try:
         top_product.columns = ["product_name", "count"]
 
         col1.metric("Total Sales", f"${total_sales:,.2f}")
-        col2.metric("Top Spender", top_user.iloc[0]["user_id"], f"${top_user.iloc[0]['total']:.2f}")
+        col2.metric("Top Spender", top_user.iloc[0]["user_id"], f"Total Spent ${top_user.iloc[0]['total']:.2f}")
         col3.metric("Top Product", top_product.iloc[0]["product_name"], f"{top_product.iloc[0]['count']} purchases")
 
         product_sales = transactions_df.groupby("product_name")["total"].sum().sort_values(ascending=False).reset_index()
@@ -107,9 +97,9 @@ try:
         top_event_type = user_events_df["event_type"].value_counts().reset_index()
         top_event_type.columns = ["event_type", "count"]
 
-        col1.metric("Most Used Browser", most_used_browser.iloc[0]["browser"], f"{most_used_browser.iloc[0][0]} uses")
+        col1.metric("Most Used Browser", most_used_browser.iloc[0]["browser"], f"{most_used_browser.iloc[0][0]} times used")
         col2.metric("Top Active User", top_event_user.iloc[0]["user_id"], f"{top_event_user.iloc[0][0]} events")
-        col3.metric("Top Event Type", top_event_type.iloc[0]["event_type"], f"{top_event_type.iloc[0]['count']} occurrences")
+        col3.metric("Top Event Type", top_event_type.iloc[0]["event_type"], f"{top_event_type.iloc[0]['count']} events")
 
         #Plot top event types
         fig_events = px.bar(
