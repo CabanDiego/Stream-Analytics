@@ -8,7 +8,7 @@ from datetime import datetime
 with DAG(
     dag_id="ingest_transform_stream_pipeline",
     start_date=datetime(2026, 4, 5, 0, 0),
-    schedule_interval='*/1 * * * *',  
+    schedule_interval='*/3 * * * *',  
     catchup=False
 )as dag:
     
@@ -16,7 +16,7 @@ with DAG(
     ingest_task = BashOperator(
         task_id='ingest_kafka_to_landing',
         bash_command=('python /opt/spark-jobs/ingest_kafka_to_landing.py '
-         '--topics transaction_events,user_events --duration 15 '
+         '--topics transaction_events,user_events --duration 20 '
           '--output /opt/spark-data/landing')
     )
 

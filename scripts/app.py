@@ -6,7 +6,7 @@ from pathlib import Path
 st.set_page_config(page_title="Transaction Analytics", layout="wide")
 st.title("Real-Time Transaction Analytics")
 
-# Paths to gold layer parquet data
+#Paths to gold layer parquet data
 GOLD_TRANSACTIONS_PATH = Path("data/gold/fact_transactions")
 GOLD_USER_EVENTS_PATH = Path("data/gold/fact_user_events")
 
@@ -17,7 +17,7 @@ def load_transactions():
     if not GOLD_TRANSACTIONS_PATH.exists():
         return pd.DataFrame()
 
-    #Retrieving list of parquet files inside the path, if none exist return empty
+    #Retrieving list of parquet files inside the path, if none exist return empty dataframe
     parquet_files = list(GOLD_TRANSACTIONS_PATH.rglob("*.parquet"))
     if not parquet_files:
         return pd.DataFrame()
@@ -39,7 +39,7 @@ def load_user_events():
     if not GOLD_USER_EVENTS_PATH.exists():
         return pd.DataFrame()
 
-    #Retrieving list of parquet files inside the path, if none exist return empty
+    #Retrieving list of parquet files inside the path, if none exist return empty dataframe
     parquet_files = list(GOLD_USER_EVENTS_PATH.rglob("*.parquet"))
     if not parquet_files:
         return pd.DataFrame()
@@ -66,16 +66,17 @@ try:
     #Transaction Events
     if not transactions_df.empty:
         st.subheader("Transaction Events Analysis")
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3, col4 = st.columns(4)
 
         total_sales = transactions_df["total"].sum()
         top_user = transactions_df.groupby("user_id")["total"].sum().sort_values(ascending=False).reset_index()
-        top_product = transactions_df["product_name"].value_counts().reset_index()
-        top_product.columns = ["product_name", "count"]
+        top_product = transactions_df.groupby("product_name").size().reset_index()
+        top_country = transactions_df.groupby("country").size().sort_values(ascending=False).reset_index()
 
         col1.metric("Total Sales", f"${total_sales:,.2f}")
         col2.metric("Top Spender", top_user.iloc[0]["user_id"], f"Total Spent ${top_user.iloc[0]['total']:.2f}")
-        col3.metric("Top Product", top_product.iloc[0]["product_name"], f"{top_product.iloc[0]['count']} purchases")
+        col3.metric("Top Product", top_product.iloc[0]["product_name"], f"{top_product.iloc[0][0]} bought")
+        col4.metric("Top Buying Country", top_country.iloc[0]["country"], f"{top_country.iloc[0][0]} purchases")
 
         product_sales = transactions_df.groupby("product_name")["total"].sum().sort_values(ascending=False).reset_index()
         fig = px.bar(
@@ -96,6 +97,7 @@ try:
         top_event_user = user_events_df.groupby("user_id").size().sort_values(ascending=False).reset_index()
         top_event_type = user_events_df["event_type"].value_counts().reset_index()
         top_event_type.columns = ["event_type", "count"]
+
 
         col1.metric("Most Used Browser", most_used_browser.iloc[0]["browser"], f"{most_used_browser.iloc[0][0]} times used")
         col2.metric("Top Active User", top_event_user.iloc[0]["user_id"], f"{top_event_user.iloc[0][0]} events")

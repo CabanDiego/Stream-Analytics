@@ -55,7 +55,7 @@ def consume_batch(topic: str, batch_duration_sec: int, output_path: str) -> int:
                     "Data": m.value
                 })
 
-    #Creating new landing zone file based on the current time
+    #Creating new landing zone file based on the current ingesting time
     os.makedirs(output_path, exist_ok=True)
     timestamp_str = datetime.now(timezone.utc).strftime("%Y-%m-%d_%H-%M")
     file_path = os.path.join(output_path, f"{timestamp_str}_batch.json")

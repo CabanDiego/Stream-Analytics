@@ -4,7 +4,7 @@ Spark Module to filter ingested JSON data from Kafka
 
 '''
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, input_file_name, regexp_extract
+from pyspark.sql.functions import col
 from pathlib import Path
 import os
 
@@ -30,13 +30,14 @@ latest_file = max(landing_path.glob("*.json"), key=lambda f: f.stat().st_mtime)
 landing_name = latest_file.stem
     
     
-#Reading found files and making sure they arent empty
+#Reading found file and creating a dataframe
 df = spark.read.option("multiLine", True)\
     .option("mode", "DROPMALFORMED")\
     .json(str(latest_file))
     
 df.cache()
 
+#Verifying that the dataframe is not empty, if it is exit 
 if df.rdd.isEmpty():
     print("No data found")
     spark.stop()
