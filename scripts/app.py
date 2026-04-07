@@ -78,7 +78,9 @@ try:
         col3.metric("Top Product", top_product.iloc[0]["product_name"], f"{top_product.iloc[0][0]} bought")
         col4.metric("Top Buying Country", top_country.iloc[0]["country"], f"{top_country.iloc[0][0]} purchases")
 
-        product_sales = transactions_df.groupby("product_name")["total"].sum().sort_values(ascending=False).reset_index()
+        purchased_df = transactions_df[transactions_df["transaction_type"] == "purchase"]
+
+        product_sales = purchased_df.groupby("product_name")["total"].sum().sort_values(ascending=False).reset_index()
         fig = px.bar(
             product_sales.head(10),
             x="product_name",
@@ -87,6 +89,16 @@ try:
             color="total"
         )
         st.plotly_chart(fig, use_container_width=True)
+
+        bot_product_sales = purchased_df.groupby("product_name")["total"].sum().sort_values(ascending=True).reset_index()
+        fig2 = px.bar(
+            bot_product_sales.head(10),
+            x="product_name",
+            y="total",
+            title="10 Lowest Revenue Products",
+            color="total"
+        )
+        st.plotly_chart(fig2, use_container_width=True)
 
     #User Events
     if not user_events_df.empty:
@@ -100,8 +112,8 @@ try:
 
 
         col1.metric("Most Used Browser", most_used_browser.iloc[0]["browser"], f"{most_used_browser.iloc[0][0]} times used")
-        col2.metric("Top Active User", top_event_user.iloc[0]["user_id"], f"{top_event_user.iloc[0][0]} events")
-        col3.metric("Top Event Type", top_event_type.iloc[0]["event_type"], f"{top_event_type.iloc[0]['count']} events")
+        col2.metric("Most Active User", top_event_user.iloc[0]["user_id"], f"{top_event_user.iloc[0][0]} events")
+        col3.metric("Top Event", top_event_type.iloc[0]["event_type"], f"{top_event_type.iloc[0]['count']} events")
 
         #Plot top event types
         fig_events = px.bar(
