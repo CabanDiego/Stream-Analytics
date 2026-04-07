@@ -73,6 +73,7 @@ try:
         top_product = transactions_df.groupby("product_name").size().reset_index()
         top_country = transactions_df.groupby("country").size().sort_values(ascending=False).reset_index()
 
+        #Columns to display transaction events stats
         col1.metric("Total Sales", f"${total_sales:,.2f}")
         col2.metric("Top Spender", top_user.iloc[0]["user_id"], f"Total Spent ${top_user.iloc[0]['total']:.2f}")
         col3.metric("Top Product", top_product.iloc[0]["product_name"], f"{top_product.iloc[0][0]} bought")
@@ -80,6 +81,7 @@ try:
 
         purchased_df = transactions_df[transactions_df["transaction_type"] == "purchase"]
 
+        #Bar graph for top 10 products based on the sum of total including returns 
         product_sales = purchased_df.groupby("product_name")["total"].sum().sort_values(ascending=False).reset_index()
         fig = px.bar(
             product_sales.head(10),
@@ -90,6 +92,7 @@ try:
         )
         st.plotly_chart(fig, use_container_width=True)
 
+        #Bar graph based on bottom selling products
         bot_product_sales = purchased_df.groupby("product_name")["total"].sum().sort_values(ascending=True).reset_index()
         fig2 = px.bar(
             bot_product_sales.head(10),
@@ -111,11 +114,12 @@ try:
         top_event_type.columns = ["event_type", "count"]
 
 
+        #Columns to display user events stats
         col1.metric("Most Used Browser", most_used_browser.iloc[0]["browser"], f"{most_used_browser.iloc[0][0]} times used")
         col2.metric("Most Active User", top_event_user.iloc[0]["user_id"], f"{top_event_user.iloc[0][0]} events")
         col3.metric("Top Event", top_event_type.iloc[0]["event_type"], f"{top_event_type.iloc[0]['count']} events")
 
-        #Plot top event types
+        #Bar graph to display top user events
         fig_events = px.bar(
             top_event_type.head(10),
             x="event_type",
