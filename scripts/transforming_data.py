@@ -4,7 +4,7 @@ Spark Module to filter ingested JSON data from Kafka
 
 '''
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col
+from pyspark.sql.functions import col, explode
 from pathlib import Path
 import os
 
@@ -49,12 +49,19 @@ if df.rdd.isEmpty():
 #Separating transaction events from ingested data
 transactions_df = df.filter(col("Topic") == "transaction_events")
 
+#Using explode to expand the product_name from one row with a list
+#To multiple rows for each item bought
+transactions_df_exploded = transactions_df.withColumn("product", explode(col("Data.products")))
+
 #Flattening and filtering wanted Transaction data for analyzing
-struct_transactions_df = transactions_df.select(
+struct_transactions_df = transactions_df_exploded.select(
     col("Data.transaction_id").alias("transaction_id"),
     col("Data.user_id").alias("user_id"),
     col("Data.transaction_type").alias("transaction_type"),
-    col("Data.products.product_name").cast("string").alias("product_name"),
+    col("product.product_id").alias("product_id"),
+    col("product.product_name").alias("product_name"),
+    col("product.quantity").alias("quantity"),
+    col("product.unit_price").alias("unit_price"),
     col("Data.billing_address.country").alias("country"),
     col("Data.payment_method").alias("payment_method"),
     col("Data.currency").alias("currency"),
@@ -92,9 +99,12 @@ dim_products = cleaned_transactions_df.select("product_name").dropDuplicates()
 dim_country = cleaned_transactions_df.select("country").dropDuplicates()
 
 fact_transactions = cleaned_transactions_df.select(
+    "transaction_id",
     "user_id",
     "product_name",
     "country",
+    "quantity",
+    "unit_price",
     "total",
     "transaction_type",
     "timestamp"

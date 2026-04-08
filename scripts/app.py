@@ -33,7 +33,7 @@ def load_transactions():
 
 
 #Load user events data
-@st.cache_data(ttl=10)
+@st.cache_data(ttl=60)
 def load_user_events():
     #Verifying to see if path exists
     if not GOLD_USER_EVENTS_PATH.exists():
@@ -57,6 +57,12 @@ try:
     #Load both datasets
     transactions_df = load_transactions()
     user_events_df = load_user_events()
+    
+    revenue_copy = transactions_df.copy()
+    
+    revenue_copy["revenue"] = (revenue_copy["quantity"] * revenue_copy["unit_price"])
+    
+    revenue_copy.loc[revenue_copy["transaction_type"] == "refund", "revenue"]*=-1
 
     #Holder in case there is no data
     if transactions_df.empty and user_events_df.empty:
@@ -76,30 +82,30 @@ try:
         #Columns to display transaction events stats
         col1.metric("Total Sales", f"${total_sales:,.2f}")
         col2.metric("Top Spender", top_user.iloc[0]["user_id"], f"Total Spent ${top_user.iloc[0]['total']:.2f}")
-        col3.metric("Top Product", top_product.iloc[0]["product_name"], f"{top_product.iloc[0][0]} bought")
+        col3.metric("Most Bought Product", top_product.iloc[0]["product_name"], f"{top_product.iloc[0][0]} bought")
         col4.metric("Top Buying Country", top_country.iloc[0]["country"], f"{top_country.iloc[0][0]} purchases")
 
-        purchased_df = transactions_df[transactions_df["transaction_type"] == "purchase"]
+        
+        product_sales = (revenue_copy.groupby("product_name")["revenue"].sum().sort_values(ascending=False).reset_index())
 
         #Bar graph for top 10 products based on the sum of total including returns 
-        product_sales = purchased_df.groupby("product_name")["total"].sum().sort_values(ascending=False).reset_index()
         fig = px.bar(
             product_sales.head(10),
             x="product_name",
-            y="total",
+            y="revenue",
             title="Top 10 Products by Revenue",
-            color="total"
+            color="revenue"
         )
         st.plotly_chart(fig, use_container_width=True)
 
         #Bar graph based on bottom selling products
-        bot_product_sales = purchased_df.groupby("product_name")["total"].sum().sort_values(ascending=True).reset_index()
+        bot_product_sales = (revenue_copy.groupby("product_name")["revenue"].sum().sort_values(ascending=True).reset_index())
         fig2 = px.bar(
             bot_product_sales.head(10),
             x="product_name",
-            y="total",
+            y="revenue",
             title="10 Lowest Revenue Products",
-            color="total"
+            color="revenue"
         )
         st.plotly_chart(fig2, use_container_width=True)
 
