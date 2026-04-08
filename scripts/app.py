@@ -58,6 +58,7 @@ try:
     transactions_df = load_transactions()
     user_events_df = load_user_events()
     
+    #Created a copy to find the revenue for each item including both refunds and purchases
     revenue_copy = transactions_df.copy()
     
     revenue_copy["revenue"] = (revenue_copy["quantity"] * revenue_copy["unit_price"])
