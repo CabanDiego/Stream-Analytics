@@ -6,6 +6,15 @@ from pathlib import Path
 st.set_page_config(page_title="Transaction Analytics", layout="wide")
 st.title("Real-Time Transaction Analytics")
 
+#Increasing font size 
+st.markdown("""
+    <style>
+    html, body, [class*="css"] {
+        font-size: 20px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 #Paths to gold layer parquet data
 GOLD_TRANSACTIONS_PATH = Path("data/gold/fact_transactions")
 GOLD_USER_EVENTS_PATH = Path("data/gold/fact_user_events")

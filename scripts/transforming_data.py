@@ -92,17 +92,25 @@ cleaned_uevents_df = struct_user_events_df.dropna(how='any')
 
 # ========== Snowflake Schema Creation for Gold Layer ========
 
-dim_users = cleaned_uevents_df.select("user_id", "browser", "device").dropDuplicates()
+dim_users = cleaned_uevents_df.select("user_id").dropDuplicates()
 
 dim_products = cleaned_transactions_df.select("product_name").dropDuplicates()
 
 dim_country = cleaned_transactions_df.select("country").dropDuplicates()
+
+dim_currency = cleaned_transactions_df.select("currency").dropDuplicates()
+
+dim_payment_method = cleaned_transactions_df.select("payment_method").dropDuplicates()
+
+dim_browser = cleaned_uevents_df.select("browser").dropDuplicates()
 
 fact_transactions = cleaned_transactions_df.select(
     "transaction_id",
     "user_id",
     "product_name",
     "country",
+    "currency",
+    "payment_method",
     "quantity",
     "unit_price",
     "total",
@@ -131,6 +139,9 @@ fact_user_events.write \
 dim_users.write.mode("append").parquet(f"{output_path}/dim_users/{landing_name}_transformed")
 dim_products.write.mode("append").parquet(f"{output_path}/dim_products/{landing_name}_transformed")
 dim_country.write.mode("append").parquet(f"{output_path}/dim_country/{landing_name}_transformed")
+dim_currency.write.mode("append").parquet(f"{output_path}/dim_currency/{landing_name}_transformed")
+dim_payment_method.write.mode("append").parquet(f"{output_path}/dim_payment_method/{landing_name}_transformed")
+dim_browser.write.mode("append").parquet(f"{output_path}/dim_browser/{landing_name}_transformed")
 
 print("Saved Gold Layer data")
 
